@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏫 ひまわりの デジタルきょうざい</title>
+    
+    <!-- Google Fonts: Klee One (教科書体・手書きに近い離れた字体) & Zen Maru Gothic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600;700&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS for modern responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Canvas Confetti for Celebration effects -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* 教科書体・離れ字形（さ・き・り・ちが繋がらない）を最優先設定 */
+        body {
+            font-family: 'Klee One', 'UD デジタル 教科書体 N-R', 'UD Digi Kyokasho', 'Zen Maru Gothic', sans-serif;
+            background-color: #FFFDE7; /* 目に優しいやわらかいクリーム色 */
+            color: #2D3748;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 太文字の強調 */
+        .text-bold-textbook {
+            font-weight: 700;
+        }
+
+        /* タップで気持ちよく凹む大型ボタンのスタイル */
+        .btn-push {
+            transition: all 0.1s ease-in-out;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+            touch-action: manipulation;
+        }
+        .btn-push:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+
+        /* カードの浮き上がり効果 */
+        .card-shadow {
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 6px 6px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* アニメーション効果 */
+        @keyframes pulse-gentle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-pulse-gentle {
+            animation: pulse-gentle 2s infinite ease-in-out;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FFF9C4;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FBC02D;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12 flex flex-col justify-between">
+
+    <!-- ヘッダーエリア -->
+    <header class="bg-amber-300 border-b-4 border-amber-400 p-4 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showPortal()">
+                <span class="text-3xl md:text-4xl">🌻</span>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide text-amber-950">
+                    ひまわりの デジタルきょうざい
+                </h1>
+            </div>
+            
+            <!-- ナビゲーション（ポータル戻るボタン） -->
+            <button id="nav-home-btn" onclick="showPortal()" class="hidden btn-push bg-white text-amber-900 border-2 border-amber-400 font-bold px-5 py-2 rounded-2xl text-lg flex items-center shadow">
+                <span class="mr-1">🏠</span> ポータルへ もどる
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full px-4 pt-6 flex-grow">
+
+        <!-- ========================================== -->
+        <!-- 0. ポータル（目次）画面                       -->
+        <!-- ========================================== -->
+        <section id="portal-view" class="space-y-8">
+            <!-- ポータルあいさつメッセージ -->
+            <div class="bg-amber-100/80 border-2 border-amber-300 p-4 rounded-3xl text-center shadow-sm">
+                <p class="text-xl md:text-2xl font-bold text-amber-900">
+                    やってみたい きょうざいを えらんでね！
+                </p>
+            </div>
+
+            <!-- 1. さんすう (青系カード) -->
+            <div class="bg-blue-50 border-3 border-blue-200 p-5 rounded-3xl card-shadow">
+                <div class="flex items-center space-x-3 mb-4 border-b-2 border-blue-200 pb-2">
+                    <span class="text-3xl bg-blue-500 text-white p-2 rounded-2xl shadow">💙</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-blue-900">さんすう</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ボタン1: かずのかぞえかた -->
+                    <button onclick="launchApp('counting')" class="btn-push bg-blue-500 hover:bg-blue-600 text-white rounded-2xl p-5 flex items-center space-x-4 border-b-4 border-blue-700 w-full text-left">
+                        <span class="text-4xl bg-white/20 p-3 rounded-xl">🔢</span>
+                        <div>
+                            <div class="text-2xl font-bold">かずの かぞえかた</div>
+                            <div class="text-sm opacity-90 mt-1">いくつあるか かぞえてみよう！</div>
+                        </div>
+                    </button>
+                    <!-- ボタン2: とけいのよみかた -->
+                    <button onclick="launchApp('clock')" class="btn-push bg-blue-500 hover:bg-blue-600 text-white rounded-2xl p-5 flex items-center space-x-4 border-b-4 border-blue-700 w-full text-left">
+                        <span class="text-4xl bg-white/20 p-3 rounded-xl">🕒</span>
+                        <div>
+                            <div class="text-2xl font-bold">とけいの よみかた</div>
+                            <div class="text-sm opacity-90 mt-1">いま なんじかな？</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. こくご (赤系カード) -->
+            <div class="bg-red-50 border-3 border-red-200 p-5 rounded-3xl card-shadow">
+                <div class="flex items-center space-x-3 mb-4 border-b-2 border-red-200 pb-2">
+                    <span class="text-3xl bg-red-500 text-white p-2 rounded-2xl shadow">❤️</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-red-900">こくご</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ボタン3: ５０おんチャレンジ (ひらがな) -->
+                    <button onclick="launchApp('hiragana')" class="btn-push bg-red-500 hover:bg-red-600 text-white rounded-2xl p-5 flex items-center space-x-4 border-b-4 border-red-700 w-full text-left animate-pulse-gentle">
+                        <span class="text-4xl bg-white/20 p-3 rounded-xl">✏️</span>
+                        <div>
+                            <div class="text-2xl font-bold">５０おん チャレンジ</div>
+                            <div class="text-sm opacity-90 mt-1">「さ」「き」も きれいな ひらがな！</div>
+                        </div>
+                    </button>
+                    <!-- ボタン4: かんじマッチング -->
+                    <button onclick="launchApp('kanji')" class="btn-push bg-red-500 hover:bg-red-600 text-white rounded-2xl p-5 flex items-center space-x-4 border-b-4 border-red-700 w-full text-left">
+                        <span class="text-4xl bg-white/20 p-3 rounded-xl">📖</span>
+                        <div>
+                            <div class="text-2xl font-bold">かんじ マッチング</div>
+                            <div class="text-sm opacity-90 mt-1">えと かんじを あわせよう！</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. せいかつ (緑系カード) -->
+            <div class="bg-emerald-50 border-3 border-emerald-200 p-5 rounded-3xl card-shadow">
+                <div class="flex items-center space-x-3 mb-4 border-b-2 border-emerald-200 pb-2">
+                    <span class="text-3xl bg-emerald-500 text-white p-2 rounded-2xl shadow">💚</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-emerald-900">せいかつ</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ボタン5: てあらいのじゅんじょ -->
+                    <button onclick="launchApp('handwash')" class="btn-push bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl p-5 flex items-center space-x-4 border-b-4 border-emerald-800 w-full text-left">
+                        <span class="text-4xl bg-white/20 p-3 rounded-xl">🧼</span>
+                        <div>
+                            <div class="text-2xl font-bold">てあらいの じゅんじょ</div>
+                            <div class="text-sm opacity-90 mt-1">じゅんばんを おぼえよう！</div>
+                        </div>
+                    </button>
+                    <!-- ボタン6: あさのしたく -->
+                    <button onclick="launchApp('morning')" class="btn-push bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl p-5 flex items-center space-x-4 border-b-4 border-emerald-800 w-full text-left">
+                        <span class="text-4xl bg-white/20 p-3 rounded-xl">🎒</span>
+                        <div>
+                            <div class="text-2xl font-bold">あさの したく</div>
+                            <div class="text-sm opacity-90 mt-1">がっこうへ いく じゅんび！</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- アプリ表示エリア (動的に切り替え)            -->
+        <!-- ========================================== -->
+        <section id="app-container" class="hidden min-h-[500px]">
+            <!-- 各アプリが JavaScript によりここにレンダリングされます -->
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="mt-8 text-center text-amber-800 font-bold text-sm opacity-80">
+        🏫 しょうがっこう とくべつしえんがっきゅう デジタルきょうざい ポータル
+    </footer>
+
+    <!-- JavaScript ロジック -->
+    <script>
+        // Web Audio API による効果音再生機能
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        // 判定・操作用サウンド効果
+        function playSound(type) {
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+
+                if (type === 'tap') {
+                    // ポップ音
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'correct') {
+                    // ピンポン（正解音）
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        gain.gain.setValueAtTime(0.4, now + idx * 0.1);
+                        gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.1);
+                        osc.stop(now + idx * 0.1 + 0.25);
+                    });
+                } else if (type === 'wrong') {
+                    // ブブー（不正解音）
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'fanfare') {
+                    // ファンファーレ
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 880, 1046.50];
+                    const times = [0, 0.12, 0.24, 0.36, 0.52, 0.68];
+                    const durations = [0.1, 0.1, 0.1, 0.14, 0.14, 0.4];
+                    notes.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + times[i]);
+                        gain.gain.setValueAtTime(0.4, now + times[i]);
+                        gain.gain.linearRampToValueAtTime(0.01, now + times[i] + durations[i]);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + times[i]);
+                        osc.stop(now + times[i] + durations[i]);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio not supported or permitted", e);
+            }
+        }
+
+        // 音声読み上げ (Web Speech API)
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // 前の音声をキャンセル
+                const uttr = new SpeechSynthesisUtterance(text);
+                uttr.lang = 'ja-JP';
+                uttr.rate = 0.85; // ややゆっくり聞き取りやすく
+                uttr.pitch = 1.1; // 明るい声
+                window.speechSynthesis.speak(uttr);
+            }
+        }
+
+        // 画面の表示切り替え
+        function showPortal() {
+            playSound('tap');
+            document.getElementById('portal-view').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('nav-home-btn').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function launchApp(appName) {
+            playSound('tap');
+            document.getElementById('portal-view').classList.add('hidden');
+            const container = document.getElementById('app-container');
+            container.classList.remove('hidden');
+            document.getElementById('nav-home-btn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            switch(appName) {
+                case 'counting': loadCountingApp(); break;
+                case 'clock': loadClockApp(); break;
+                case 'hiragana': loadHiraganaApp(); break;
+                case 'kanji': loadKanjiApp(); break;
+                case 'handwash': loadHandwashApp(); break;
+                case 'morning': loadMorningApp(); break;
+            }
+        }
+
+        // =========================================================
+        // 1. ５０おんチャレンジ！ (ひらがな マッチング)
+        // =========================================================
+        const hiraganaData = [
+            { char: 'あ', word: 'あいす', emoji: '🍦' },
+            { char: 'い', word: 'いぬ', emoji: '🐶' },
+            { char: 'う', word: 'うさぎ', emoji: '🐰' },
+            { char: 'え', word: 'えんぴつ', emoji: '✏️' },
+            { char: 'お', word: 'おにぎり', emoji: '🍙' },
+            
+            { char: 'か', word: 'かさ', emoji: '☂️' },
+            { char: 'き', word: 'きりん', emoji: '🦒' },
+            { char: 'く', word: 'くるま', emoji: '🚗' },
+            { char: 'け', word: 'ケーキ', emoji: '🍰' },
+            { char: 'こ', word: 'こうえん', emoji: '🛝' },
+
+            { char: 'さ', word: 'さくら', emoji: '🌸' },
+            { char: 'し', word: 'しんかんせん', emoji: '🚅' },
+            { char: 'す', word: 'すいか', emoji: '🍉' },
+            { char: 'せ', word: 'せっけん', emoji: '🧼' },
+            { char: 'そ', word: 'そら', emoji: '☁️' },
+
+            { char: 'た', word: 'たいこ', emoji: '🥁' },
+            { char: 'ち', word: 'いちご', emoji: '🍓' },
+            { char: 'つ', word: 'つくえ', emoji: '🪑' },
+            { char: 'て', word: 'てんとうむし', emoji: '🐞' },
+            { char: 'と', word: 'とけい', emoji: '🕒' },
+
+            { char: 'な', word: 'なす', emoji: '🍆' },
+            { char: 'に', word: 'にんじん', emoji: '🥕' },
+            { char: 'ぬ', word: 'ぬいぐるみ', emoji: '🧸' },
+            { char: 'ね', word: 'ねこ', emoji: '🐱' },
+            { char: 'の', word: 'のり', emoji: '🍙' },
+
+            { char: 'は', word: 'はな', emoji: '🌻' },
+            { char: 'ひ', word: 'ひこうき', emoji: '✈️' },
+            { char: 'ふ', word: 'ふね', emoji: '🚢' },
+            { char: 'へ', word: 'へび', emoji: '🐍' },
+            { char: 'ほ', word: 'ほん', emoji: '📚' },
+
+            { char: 'ま', word: 'みかん', emoji: '🍊' },
+            { char: 'み', word: 'みず', emoji: '💧' },
+            { char: 'む', word: 'むし', emoji: '🐛' },
+            { char: 'め', word: 'めがね', emoji: '👓' },
+            { char: 'も', word: 'もも', emoji: '🍑' },
+
+            { char: 'や', word: 'やま', emoji: '⛰️' },
+            { char: 'ゆ', word: 'ゆきだるま', emoji: '☃️' },
+            { char: 'よ', word: 'ヨット', emoji: '⛵' },
+
+            { char: 'ら', word: 'らいおん', emoji: '🦁' },
+            { char: 'り', word: 'りんご', emoji: '🍎' },
+            { char: 'る', word: 'るびー', emoji: '💎' },
+            { char: 'れ', word: 'れもん', emoji: '🍋' },
+            { char: 'ろ', word: 'ろけっと', emoji: '🚀' },
+
+            { char: 'わ', word: 'わに', emoji: '🐊' },
+            { char: 'を', word: 'ほんをよむ', emoji: '📖' },
+            { char: 'ん', word: 'らいおん', emoji: '🦁' }
+        ];
+
+        let currentHiraganaQuiz = null;
+
+        function loadHiraganaApp() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 card-shadow border-4 border-red-300">
+                    <div class="flex items-center justify-between border-b-2 border-red-100 pb-4 mb-4">
+                        <h2 class="text-3xl font-bold text-red-600 flex items-center gap-2">
+                            <span>✏️</span> ５０おん チャレンジ！
+                        </h2>
+                        <button onclick="speak('５０おんチャレンジ。えに あう ひらがなを えらんでね！')" class="text-2xl bg-red-100 p-2 rounded-full hover:bg-red-200">🔊</button>
+                    </div>
+
+                    <!-- 問題カード -->
+                    <div class="text-center py-6 bg-red-50 rounded-2xl border-2 border-red-200 mb-6">
+                        <div id="hiragana-emoji" class="text-7xl md:text-8xl mb-3 animate-bounce">🍎</div>
+                        <div id="hiragana-word" class="text-3xl md:text-4xl font-bold text-red-900 mb-2">り ん ご</div>
+                        <p id="hiragana-prompt" class="text-xl text-red-700 font-bold">「さ」や「き」も 離れていて 見やすいよ！</p>
+                    </div>
+
+                    <!-- 選択肢ボタン (4択) -->
+                    <div id="hiragana-options" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <!-- JSで挿入 -->
+                    </div>
+
+                    <!-- メッセージ表示エリア -->
+                    <div id="hiragana-feedback" class="text-center text-2xl font-bold h-10 text-emerald-600"></div>
+
+                    <!-- つぎへボタン -->
+                    <div class="text-center mt-4">
+                        <button onclick="nextHiraganaQuiz()" class="btn-push bg-red-500 hover:bg-red-600 text-white text-2xl font-bold px-8 py-4 rounded-2xl shadow-lg border-b-4 border-red-700">
+                            つぎの もんだい ➡️
+                        </button>
+                    </div>
+                </div>
+            `;
+            speak("５０おん チャレンジ！ えに あう ひらがなを えらぼう！");
+            nextHiraganaQuiz();
+        }
+
+        function nextHiraganaQuiz() {
+            document.getElementById('hiragana-feedback').innerText = '';
+            // ランダムに1つ選択
+            currentHiraganaQuiz = hiraganaData[Math.floor(Math.random() * hiraganaData.length)];
+            
+            document.getElementById('hiragana-emoji').innerText = currentHiraganaQuiz.emoji;
+            document.getElementById('hiragana-word').innerText = currentHiraganaQuiz.word;
+            document.getElementById('hiragana-prompt').innerText = `「${currentHiraganaQuiz.char}」は どれかな？`;
+
+            // 選択肢作成 (正解1つ + ダミー3つ)
+            let choices = [currentHiraganaQuiz.char];
+            while (choices.length < 4) {
+                let randomItem = hiraganaData[Math.floor(Math.random() * hiraganaData.length)].char;
+                if (!choices.includes(randomItem)) {
+                    choices.push(randomItem);
+                }
+            }
+            // シャッフル
+            choices.sort(() => Math.random() - 0.5);
+
+            const optionsContainer = document.getElementById('hiragana-options');
+            optionsContainer.innerHTML = '';
+
+            choices.forEach(char => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-push bg-amber-100 hover:bg-amber-200 text-amber-950 text-5xl md:text-6xl font-bold p-6 rounded-2xl border-4 border-amber-300 shadow-md text-center flex justify-center items-center h-28';
+                btn.innerText = char;
+                btn.onclick = () => checkHiraganaAnswer(char, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            speak(`「${currentHiraganaQuiz.word}」の 「${currentHiraganaQuiz.char}」は どれかな？`);
+        }
+
+        function checkHiraganaAnswer(selectedChar, btnElement) {
+            speak(selectedChar);
+            if (selectedChar === currentHiraganaQuiz.char) {
+                playSound('correct');
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+                document.getElementById('hiragana-feedback').innerText = '🎉 すごい！ せいかい！';
+                btnElement.classList.remove('bg-amber-100', 'border-amber-300');
+                btnElement.classList.add('bg-emerald-400', 'border-emerald-600', 'text-white');
+                speak(`せいかい！ ${currentHiraganaQuiz.char} です！`);
+                setTimeout(nextHiraganaQuiz, 1800);
+            } else {
+                playSound('wrong');
+                document.getElementById('hiragana-feedback').innerText = 'ざんねん！ もういちど！';
+                btnElement.classList.add('opacity-40');
+            }
+        }
+
+        // =========================================================
+        // 2. かずの かぞえかた (さんすう)
+        // =========================================================
+        let currentCountQuiz = { count: 3, item: '🍎' };
+
+        function loadCountingApp() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 card-shadow border-4 border-blue-300">
+                    <div class="flex items-center justify-between border-b-2 border-blue-100 pb-4 mb-4">
+                        <h2 class="text-3xl font-bold text-blue-600 flex items-center gap-2">
+                            <span>🔢</span> かずの かぞえかた
+                        </h2>
+                        <button onclick="speak('いくつ あるかな？ タップして かぞえてみよう！')" class="text-2xl bg-blue-100 p-2 rounded-full hover:bg-blue-200">🔊</button>
+                    </div>
+
+                    <div class="text-center py-6 bg-blue-50 rounded-2xl border-2 border-blue-200 mb-6">
+                        <p class="text-2xl text-blue-900 font-bold mb-4">タッチして かぞえてみよう！</p>
+                        <!-- 絵を並べるエリア -->
+                        <div id="count-items-box" class="flex flex-wrap justify-center items-center gap-4 min-h-[120px] px-4">
+                            <!-- JSで生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 選択肢数字 -->
+                    <p class="text-center text-xl text-blue-800 font-bold mb-3">ぜんぶで いくつあるかな？</p>
+                    <div id="count-options" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <!-- JSで数字ボタン表示 -->
+                    </div>
+
+                    <div id="count-feedback" class="text-center text-2xl font-bold h-10 text-emerald-600"></div>
+
+                    <div class="text-center mt-4">
+                        <button onclick="nextCountQuiz()" class="btn-push bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold px-8 py-4 rounded-2xl shadow-lg border-b-4 border-blue-700">
+                            つぎの もんだい ➡️
+                        </button>
+                    </div>
+                </div>
+            `;
+            nextCountQuiz();
+        }
+
+        function nextCountQuiz() {
+            document.getElementById('count-feedback').innerText = '';
+            const items = ['🍎', '🐱', '🚗', '🌸', '🍌', '⭐', '🐥', '⚽'];
+            const randomItem = items[Math.floor(Math.random() * items.length)];
+            const targetCount = Math.floor(Math.random() * 6) + 1; // 1〜6個
+
+            currentCountQuiz = { count: targetCount, item: randomItem };
+
+            const itemsBox = document.getElementById('count-items-box');
+            itemsBox.innerHTML = '';
+
+            for (let i = 1; i <= targetCount; i++) {
+                const itemElem = document.createElement('button');
+                itemElem.className = 'btn-push text-6xl md:text-7xl p-3 bg-white rounded-2xl border-2 border-blue-200 hover:bg-yellow-100 transform transition active:scale-95';
+                itemElem.innerText = randomItem;
+                itemElem.onclick = () => {
+                    playSound('tap');
+                    speak(`${i}`);
+                    itemElem.classList.add('bg-yellow-200', 'border-amber-400');
+                };
+                itemsBox.appendChild(itemElem);
+            }
+
+            // 選択肢作成
+            let choices = [targetCount];
+            while (choices.length < 4) {
+                let num = Math.floor(Math.random() * 6) + 1;
+                if (!choices.includes(num)) choices.push(num);
+            }
+            choices.sort((a, b) => a - b);
+
+            const optionsBox = document.getElementById('count-options');
+            optionsBox.innerHTML = '';
+
+            choices.forEach(num => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-push bg-blue-100 hover:bg-blue-200 text-blue-950 text-5xl font-bold p-6 rounded-2xl border-4 border-blue-300 text-center';
+                btn.innerText = `${num}`;
+                btn.onclick = () => checkCountAnswer(num, btn);
+                optionsBox.appendChild(btn);
+            });
+
+            speak(`いくつあるかな？ かぞえてみよう！`);
+        }
+
+        function checkCountAnswer(num, btnElement) {
+            if (num === currentCountQuiz.count) {
+                playSound('correct');
+                confetti({ particleCount: 50, spread: 60 });
+                document.getElementById('count-feedback').innerText = '🎉 だいせいかい！';
+                btnElement.classList.add('bg-emerald-400', 'text-white');
+                speak(`せいかい！ ${num} 個です！`);
+                setTimeout(nextCountQuiz, 1800);
+            } else {
+                playSound('wrong');
+                document.getElementById('count-feedback').innerText = 'もういちど かぞえてみよう！';
+                btnElement.classList.add('opacity-40');
+            }
+        }
+
+        // =========================================================
+        // 3. とけいの よみかた (さんすう)
+        // =========================================================
+        let currentClockHour = 3;
+
+        function loadClockApp() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 card-shadow border-4 border-blue-300">
+                    <div class="flex items-center justify-between border-b-2 border-blue-100 pb-4 mb-4">
+                        <h2 class="text-3xl font-bold text-blue-600 flex items-center gap-2">
+                            <span>🕒</span> とけいの よみかた
+                        </h2>
+                        <button onclick="speak('いま なんじかな？')" class="text-2xl bg-blue-100 p-2 rounded-full hover:bg-blue-200">🔊</button>
+                    </div>
+
+                    <div class="text-center py-6 bg-blue-50 rounded-2xl border-2 border-blue-200 mb-6 flex flex-col items-center">
+                        <!-- アナログ時計 Canvas -->
+                        <canvas id="clockCanvas" width="220" height="220" class="bg-white rounded-full border-4 border-amber-400 shadow-md mb-2"></canvas>
+                        <p class="text-2xl text-blue-900 font-bold">とけいは なんじを さしているかな？</p>
+                    </div>
+
+                    <div id="clock-options" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <!-- 選択肢 -->
+                    </div>
+
+                    <div id="clock-feedback" class="text-center text-2xl font-bold h-10 text-emerald-600"></div>
+
+                    <div class="text-center mt-4">
+                        <button onclick="nextClockQuiz()" class="btn-push bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold px-8 py-4 rounded-2xl shadow-lg border-b-4 border-blue-700">
+                            つぎの もんだい ➡️
+                        </button>
+                    </div>
+                </div>
+            `;
+            nextClockQuiz();
+        }
+
+        function drawClock(hour) {
+            const canvas = document.getElementById('clockCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const radius = canvas.height / 2;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(radius, radius);
+
+            // 文字盤の背景
+            ctx.beginPath();
+            ctx.arc(0, 0, radius - 8, 0, 2 * Math.PI);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+
+            // 数字の描画
+            ctx.font = 'bold 18px "Klee One", sans-serif';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#1E3A8A';
+
+            for (let num = 1; num <= 12; num++) {
+                let ang = num * Math.PI / 6;
+                ctx.rotate(ang);
+                ctx.translate(0, -radius + 26);
+                ctx.rotate(-ang);
+                ctx.fillText(num.toString(), 0, 0);
+                ctx.rotate(ang);
+                ctx.translate(0, radius - 26);
+                ctx.rotate(-ang);
+            }
+
+            // 短針 (時針)
+            let hourAngle = (hour % 12) * (Math.PI / 6);
+            ctx.beginPath();
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#E11D48'; // 赤色
+            ctx.moveTo(0, 0);
+            ctx.rotate(hourAngle);
+            ctx.lineTo(0, -radius * 0.5);
+            ctx.stroke();
+            ctx.rotate(-hourAngle);
+
+            // 長針 (分針 - 0分に固定)
+            ctx.beginPath();
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#2563EB'; // 青色
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -radius * 0.72);
+            ctx.stroke();
+
+            // 中心円
+            ctx.beginPath();
+            ctx.arc(0, 0, 7, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1E293B';
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function nextClockQuiz() {
+            document.getElementById('clock-feedback').innerText = '';
+            currentClockHour = Math.floor(Math.random() * 12) + 1; // 1〜12時
+
+            drawClock(currentClockHour);
+
+            // 選択肢
+            let choices = [currentClockHour];
+            while (choices.length < 4) {
+                let h = Math.floor(Math.random() * 12) + 1;
+                if (!choices.includes(h)) choices.push(h);
+            }
+            choices.sort((a, b) => a - b);
+
+            const optionsBox = document.getElementById('clock-options');
+            optionsBox.innerHTML = '';
+
+            choices.forEach(h => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-push bg-blue-100 hover:bg-blue-200 text-blue-950 text-4xl font-bold p-6 rounded-2xl border-4 border-blue-300 text-center';
+                btn.innerText = `${h}じ`;
+                btn.onclick = () => checkClockAnswer(h, btn);
+                optionsBox.appendChild(btn);
+            });
+
+            speak(`いま なんじかな？`);
+        }
+
+        function checkClockAnswer(h, btnElement) {
+            if (h === currentClockHour) {
+                playSound('correct');
+                confetti({ particleCount: 50, spread: 60 });
+                document.getElementById('clock-feedback').innerText = '🎉 せいかい！';
+                btnElement.classList.add('bg-emerald-400', 'text-white');
+                speak(`せいかい！ ${h}じ です！`);
+                setTimeout(nextClockQuiz, 1800);
+            } else {
+                playSound('wrong');
+                document.getElementById('clock-feedback').innerText = 'ちがうよ！ もう一度みてね';
+                btnElement.classList.add('opacity-40');
+            }
+        }
+
+        // =========================================================
+        // 4. かんじ マッチング (こくご)
+        // =========================================================
+        const kanjiData = [
+            { kanji: '日', read: 'ひ / たいよう', emoji: '☀️' },
+            { kanji: '月', read: 'つき', emoji: '🌙' },
+            { kanji: '木', read: 'き', emoji: '🌳' },
+            { kanji: '水', read: 'みず', emoji: '💧' },
+            { kanji: '火', read: 'ひ', emoji: '🔥' },
+            { kanji: '山', read: 'やま', emoji: '⛰️' },
+            { kanji: '川', read: 'かわ', emoji: '🌊' },
+            { kanji: '花', read: 'はな', emoji: '🌸' }
+        ];
+
+        let currentKanji = null;
+
+        function loadKanjiApp() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 card-shadow border-4 border-red-300">
+                    <div class="flex items-center justify-between border-b-2 border-red-100 pb-4 mb-4">
+                        <h2 class="text-3xl font-bold text-red-600 flex items-center gap-2">
+                            <span>📖</span> かんじ マッチング
+                        </h2>
+                        <button onclick="speak('かんじに あう えを えらんでね！')" class="text-2xl bg-red-100 p-2 rounded-full hover:bg-red-200">🔊</button>
+                    </div>
+
+                    <div class="text-center py-6 bg-red-50 rounded-2xl border-2 border-red-200 mb-6">
+                        <div id="kanji-display" class="text-8xl font-bold text-red-900 mb-2">日</div>
+                        <p class="text-xl text-red-700 font-bold">この かんじに あう 絵は どれかな？</p>
+                    </div>
+
+                    <div id="kanji-options" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <!-- 選択肢絵柄 -->
+                    </div>
+
+                    <div id="kanji-feedback" class="text-center text-2xl font-bold h-10 text-emerald-600"></div>
+
+                    <div class="text-center mt-4">
+                        <button onclick="nextKanjiQuiz()" class="btn-push bg-red-500 hover:bg-red-600 text-white text-2xl font-bold px-8 py-4 rounded-2xl shadow-lg border-b-4 border-red-700">
+                            つぎの もんだい ➡️
+                        </button>
+                    </div>
+                </div>
+            `;
+            nextKanjiQuiz();
+        }
+
+        function nextKanjiQuiz() {
+            document.getElementById('kanji-feedback').innerText = '';
+            currentKanji = kanjiData[Math.floor(Math.random() * kanjiData.length)];
+            document.getElementById('kanji-display').innerText = currentKanji.kanji;
+
+            let choices = [currentKanji];
+            while (choices.length < 4) {
+                let item = kanjiData[Math.floor(Math.random() * kanjiData.length)];
+                if (!choices.includes(item)) choices.push(item);
+            }
+            choices.sort(() => Math.random() - 0.5);
+
+            const optionsBox = document.getElementById('kanji-options');
+            optionsBox.innerHTML = '';
+
+            choices.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-push bg-amber-100 hover:bg-amber-200 text-7xl p-6 rounded-2xl border-4 border-amber-300 text-center flex justify-center items-center h-28';
+                btn.innerText = item.emoji;
+                btn.onclick = () => checkKanjiAnswer(item, btn);
+                optionsBox.appendChild(btn);
+            });
+
+            speak(`漢字の 「${currentKanji.kanji}」 にあう 絵は どれかな？`);
+        }
+
+        function checkKanjiAnswer(selectedItem, btnElement) {
+            if (selectedItem.kanji === currentKanji.kanji) {
+                playSound('correct');
+                confetti({ particleCount: 50, spread: 60 });
+                document.getElementById('kanji-feedback').innerText = '🎉 せいかい！';
+                btnElement.classList.add('bg-emerald-300', 'border-emerald-500');
+                speak(`せいかい！ 「${currentKanji.kanji}」 です！`);
+                setTimeout(nextKanjiQuiz, 1800);
+            } else {
+                playSound('wrong');
+                document.getElementById('kanji-feedback').innerText = 'もう一度 かんがえてみよう！';
+                btnElement.classList.add('opacity-40');
+            }
+        }
+
+        // =========================================================
+        // 5. てあらいの じゅんじょ (せいかつ)
+        // =========================================================
+        const handwashSteps = [
+            { step: 1, text: 'てを みずで ぬらす', emoji: '🚿' },
+            { step: 2, text: 'せっけんを つける', emoji: '🧼' },
+            { step: 3, text: 'ごしごし あらう', emoji: '🫧' },
+            { step: 4, text: 'みずで ながす', emoji: '🚰' },
+            { step: 5, text: 'たおるで ふく', emoji: '🧻' }
+        ];
+
+        let currentStepIndex = 0;
+
+        function loadHandwashApp() {
+            currentStepIndex = 0;
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 card-shadow border-4 border-emerald-300">
+                    <div class="flex items-center justify-between border-b-2 border-emerald-100 pb-4 mb-4">
+                        <h2 class="text-3xl font-bold text-emerald-700 flex items-center gap-2">
+                            <span>🧼</span> てあらいの じゅんじょ
+                        </h2>
+                        <button onclick="speak('てあらいの じゅんばん通りに ボタンを おしてね！')" class="text-2xl bg-emerald-100 p-2 rounded-full hover:bg-emerald-200">🔊</button>
+                    </div>
+
+                    <div class="text-center py-4 bg-emerald-50 rounded-2xl border-2 border-emerald-200 mb-6">
+                        <p class="text-2xl text-emerald-900 font-bold mb-2">つぎは なにをするかな？ じゅんばんに おそう！</p>
+                        <div id="handwash-progress" class="text-xl font-bold text-emerald-700">ステップ: 1 / 5</div>
+                    </div>
+
+                    <div id="handwash-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- JSでカード挿入 -->
+                    </div>
+
+                    <div id="handwash-feedback" class="text-center text-2xl font-bold h-10 text-emerald-600"></div>
+                </div>
+            `;
+            renderHandwashQuiz();
+        }
+
+        function renderHandwashQuiz() {
+            if (currentStepIndex >= handwashSteps.length) {
+                playSound('fanfare');
+                confetti({ particleCount: 100, spread: 80 });
+                document.getElementById('handwash-buttons').innerHTML = '';
+                document.getElementById('handwash-feedback').innerHTML = '🎉 てあらい マスター！ きれいに なったね！';
+                speak('すごい！ てあらいの じゅんじょが かんぺきに できました！');
+                
+                setTimeout(() => {
+                    loadHandwashApp();
+                }, 3500);
+                return;
+            }
+
+            document.getElementById('handwash-progress').innerText = `ステップ: ${currentStepIndex + 1} / 5`;
+            const optionsBox = document.getElementById('handwash-buttons');
+            optionsBox.innerHTML = '';
+
+            // シャッフルしたカードを表示
+            let shuffled = [...handwashSteps].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-push bg-emerald-100 hover:bg-emerald-200 text-emerald-950 p-5 rounded-2xl border-4 border-emerald-300 text-left flex items-center space-x-4';
+                btn.innerHTML = `
+                    <span class="text-5xl">${item.emoji}</span>
+                    <span class="text-2xl font-bold">${item.text}</span>
+                `;
+                btn.onclick = () => checkHandwashStep(item, btn);
+                optionsBox.appendChild(btn);
+            });
+
+            speak(`ステップ ${currentStepIndex + 1}。つぎに するのは どれかな？`);
+        }
+
+        function checkHandwashStep(item, btnElement) {
+            const correctTarget = handwashSteps[currentStepIndex];
+
+            if (item.step === correctTarget.step) {
+                playSound('correct');
+                document.getElementById('handwash-feedback').innerText = `⭕ ${item.text}！ 正解！`;
+                speak(item.text);
+                currentStepIndex++;
+                setTimeout(() => {
+                    document.getElementById('handwash-feedback').innerText = '';
+                    renderHandwashQuiz();
+                }, 1200);
+            } else {
+                playSound('wrong');
+                document.getElementById('handwash-feedback').innerText = 'じゅんばんが ちがうよ！';
+                btnElement.classList.add('opacity-40');
+            }
+        }
+
+        // =========================================================
+        // 6. あさの したく (せいかつ)
+        // =========================================================
+        const morningTasks = [
+            { id: 1, text: '7じに おきる', emoji: '⏰', done: false },
+            { id: 2, text: 'ふくを きがえる', emoji: '👕', done: false },
+            { id: 3, text: 'あさごはんを たべる', emoji: '🍞', done: false },
+            { id: 4, text: 'はを みがく', emoji: '🪥', done: false },
+            { id: 5, text: 'ランドセルを じゅんび', emoji: '🎒', done: false }
+        ];
+
+        function loadMorningApp() {
+            morningTasks.forEach(t => t.done = false);
+            renderMorningChecklist();
+        }
+
+        function renderMorningChecklist() {
+            const container = document.getElementById('app-container');
+            
+            let listHtml = morningTasks.map(task => `
+                <button onclick="toggleMorningTask(${task.id})" class="btn-push w-full text-left p-5 rounded-2xl border-4 mb-3 flex items-center justify-between transition-all ${
+                    task.done ? 'bg-amber-200 border-amber-400 opacity-80' : 'bg-white border-emerald-300 hover:bg-emerald-50'
+                }">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-4xl">${task.emoji}</span>
+                        <span class="text-2xl font-bold ${task.done ? 'line-through text-amber-900' : 'text-slate-800'}">${task.text}</span>
+                    </div>
+                    <span class="text-4xl">${task.done ? '✅' : '⭕'}</span>
+                </button>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 card-shadow border-4 border-emerald-300">
+                    <div class="flex items-center justify-between border-b-2 border-emerald-100 pb-4 mb-4">
+                        <h2 class="text-3xl font-bold text-emerald-700 flex items-center gap-2">
+                            <span>🎒</span> あさの したく
+                        </h2>
+                        <button onclick="speak('できたものに タップして チェックしよう！')" class="text-2xl bg-emerald-100 p-2 rounded-full hover:bg-emerald-200">🔊</button>
+                    </div>
+
+                    <p class="text-2xl text-emerald-900 font-bold mb-4 text-center">できたものから タップしてね！</p>
+
+                    <div class="space-y-2 max-w-2xl mx-auto">
+                        ${listHtml}
+                    </div>
+
+                    <div id="morning-feedback" class="text-center text-2xl font-bold h-12 text-emerald-600 mt-4"></div>
+                </div>
+            `;
+        }
+
+        function toggleMorningTask(id) {
+            const task = morningTasks.find(t => t.id === id);
+            if (task) {
+                task.done = !task.done;
+                if (task.done) {
+                    playSound('correct');
+                    speak(`${task.text}。 できました！`);
+                } else {
+                    playSound('tap');
+                }
+            }
+
+            renderMorningChecklist();
+
+            // 全部達成判定
+            const allDone = morningTasks.every(t => t.done);
+            if (allDone) {
+                playSound('fanfare');
+                confetti({ particleCount: 120, spread: 90 });
+                document.getElementById('morning-feedback').innerText = '🎉 すごい！ あさの したくが ぜんぶ できました！';
+                speak('すごい！ あさの したくが ぜんぶ できました！ がっこうへ しゅっぱつ！');
+            }
+        }
+
+        // 初期状態はポータル画面を表示
+        window.onload = function() {
+            showPortal();
+        };
+    </script>
+</body>
+</html>
