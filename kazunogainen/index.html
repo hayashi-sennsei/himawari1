@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>たのしい かずの がくしゅう</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #FFFDF0;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ぽよんアニメーション */
+        @keyframes pop {
+            0% { transform: scale(0.7); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .animate-pop {
+            animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* タッチハイライト発光 */
+        @keyframes highlight-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+        .item-highlight {
+            animation: highlight-pulse 0.3s ease-in-out;
+            z-index: 30;
+        }
+
+        /* 花丸アニメーション */
+        @keyframes hanamaru-appear {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            70% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .animate-hanamaru {
+            animation: hanamaru-appear 0.4s ease-out forwards;
+        }
+
+        /* ボタン用シャドウ */
+        .btn-shadow {
+            box-shadow: 0 4px 0 0 rgba(0,0,0,0.15);
+        }
+        .btn-shadow:active {
+            box-shadow: 0 1px 0 0 rgba(0,0,0,0.15);
+            transform: translateY(3px);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-slate-800">
+
+    <!-- 1. ヘッダー -->
+    <header class="bg-amber-300 border-b-2 border-amber-400 px-3 py-1.5 shadow-sm flex justify-between items-center z-20 shrink-0">
+        <div class="flex items-center gap-1.5">
+            <span class="text-2xl">🍎</span>
+            <h1 class="text-lg md:text-xl font-black text-amber-900 tracking-wider">かずの がくしゅう</h1>
+        </div>
+        
+        <!-- モード切り替えタブ -->
+        <div class="flex gap-1 bg-amber-200/80 p-1 rounded-xl border border-amber-400">
+            <button onclick="setMode('count')" id="mode-count" class="px-2.5 py-1 rounded-lg font-bold text-xs md:text-sm transition-all bg-amber-500 text-white shadow-sm">
+                ① すうしょう
+            </button>
+            <button onclick="setMode('place')" id="mode-place" class="px-2.5 py-1 rounded-lg font-bold text-xs md:text-sm transition-all bg-white text-amber-900 hover:bg-amber-100">
+                ② けいすう
+            </button>
+            <button onclick="setMode('howmany')" id="mode-howmany" class="px-2.5 py-1 rounded-lg font-bold text-xs md:text-sm transition-all bg-white text-amber-900 hover:bg-amber-100">
+                ③ いくつの
+            </button>
+        </div>
+
+        <button onclick="toggleSettingsModal(true)" class="bg-white hover:bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded-xl border border-slate-300 flex items-center gap-1 text-xs md:text-sm shadow-sm">
+            ⚙️ <span class="hidden sm:inline">せってい</span>
+        </button>
+    </header>
+
+    <!-- 2. 問題提示エリア -->
+    <div class="bg-white border-b border-slate-200 px-3 py-1.5 shadow-inner flex items-center justify-between gap-2 shrink-0 min-h-[52px]">
+        <div class="flex items-center gap-2">
+            <button onclick="speakCurrentQuestion()" class="bg-emerald-500 hover:bg-emerald-600 text-white p-1.5 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center justify-center shrink-0" title="おんせいをきく">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+            </button>
+            <div id="question-text" class="text-base md:text-xl font-black text-slate-800 tracking-wide flex items-center gap-1">
+                がくしゅうを はじめよう！
+            </div>
+        </div>
+
+        <!-- 進捗（星とカウント） -->
+        <div class="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 shrink-0 shadow-xs" id="progress-container">
+            <!-- JSで動的生成 -->
+        </div>
+    </div>
+
+    <!-- 3. メイン学習スペース (1画面収容) -->
+    <main class="flex-1 p-2 md:p-3 flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-center max-w-6xl mx-auto w-full overflow-hidden">
+
+        <!-- 左側: 具体物トレー（置場） -->
+        <div class="w-full md:w-1/4 h-20 md:h-full max-h-[130px] md:max-h-[360px] bg-orange-100/90 border-3 border-orange-300 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm relative shrink-0 mt-2">
+            <div id="tray-label" class="absolute -top-3.5 left-4 bg-orange-400 text-white text-xs md:text-sm font-bold px-2.5 py-0.5 rounded-full shadow-sm z-10">
+                りんご おきば
+            </div>
+
+            <div id="item-tray" class="flex items-center justify-center gap-2 p-1 w-full h-full">
+                <!-- JSで動的生成 -->
+            </div>
+            
+            <p id="tray-instruction" class="text-[10px] md:text-xs text-orange-800 font-bold text-center">
+                タッチ・ドラッグで おけるよ
+            </p>
+        </div>
+
+        <!-- 右側: 10のフレーム (上部文字切れ対策でmt-2とpadding調整) -->
+        <div class="w-full md:w-3/4 flex-1 md:h-full max-h-[360px] bg-sky-100/90 border-3 border-sky-300 rounded-2xl p-2.5 md:p-4 flex flex-col items-center justify-center shadow-sm relative shrink-0 mt-2">
+            <div class="absolute -top-3.5 left-4 bg-sky-500 text-white text-xs md:text-sm font-bold px-3 py-0.5 rounded-full shadow-sm z-10">
+                かずの わく（フレーム）
+            </div>
+
+            <!-- フレームコンテナ -->
+            <div id="frames-wrapper" class="flex flex-col gap-2 md:gap-3 items-center justify-center w-full h-full my-auto pt-1">
+                <!-- JSで動的生成 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 4. 下部操作＆回答エリア -->
+    <footer class="bg-slate-100 border-t border-slate-300 px-3 py-2 shadow-md shrink-0 z-10">
+        <div class="max-w-3xl mx-auto flex flex-col items-center gap-1.5">
+            
+            <!-- ②モード用 アクションボタン -->
+            <div id="action-buttons" class="flex gap-3 justify-center w-full">
+                <button onclick="resetCurrentBoard()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-1.5 rounded-xl border-b-2 border-slate-400 text-base btn-shadow transition-all flex items-center gap-1">
+                    🔄 もういちど
+                </button>
+                <button id="btn-submit" onclick="checkAnswer()" class="bg-rose-500 hover:bg-rose-600 text-white font-black px-8 py-1.5 rounded-xl border-b-2 border-rose-700 text-lg md:text-xl btn-shadow transition-all flex items-center gap-1">
+                    ✨ できた！
+                </button>
+            </div>
+
+            <!-- ③いくつのモード用 数字選択ボタン -->
+            <div id="number-buttons" class="hidden w-full flex-col items-center gap-1">
+                <p class="text-xs font-bold text-slate-600">かずを えらんでね</p>
+                <div id="num-pad" class="w-full flex flex-col items-center gap-1.5">
+                    <!-- JSで数字ボタンを生成（20までの時は2列に自動分割） -->
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ⚙️ 設定モーダル -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-3">
+        <div class="bg-white rounded-3xl border-4 border-amber-400 p-4 max-w-md w-full shadow-2xl flex flex-col gap-3">
+            <h2 class="text-xl font-black text-amber-900 border-b-2 border-amber-100 pb-1 flex items-center gap-2">
+                ⚙️ せんせい・おうちのかたへ
+            </h2>
+
+            <!-- 1. はんい -->
+            <div class="flex flex-col gap-1">
+                <label class="font-bold text-slate-700 text-xs">● かずの はんい（フレーム）</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="updateSetting('maxNumber', 5)" id="set-max-5" class="py-1.5 rounded-xl border-2 font-bold text-center text-sm border-amber-400 bg-amber-100 text-amber-900">5まで</button>
+                    <button onclick="updateSetting('maxNumber', 10)" id="set-max-10" class="py-1.5 rounded-xl border-2 font-bold text-center text-sm border-slate-200 bg-slate-50 text-slate-700">10まで</button>
+                    <button onclick="updateSetting('maxNumber', 20)" id="set-max-20" class="py-1.5 rounded-xl border-2 font-bold text-center text-sm border-slate-200 bg-slate-50 text-slate-700">20まで</button>
+                </div>
+            </div>
+
+            <!-- 2. もんだいすう -->
+            <div class="flex flex-col gap-1">
+                <label class="font-bold text-slate-700 text-xs">● もんだいすう</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="updateSetting('questionCount', 3)" id="set-q-3" class="py-1.5 rounded-xl border-2 font-bold text-center text-sm border-amber-400 bg-amber-100 text-amber-900">3もん</button>
+                    <button onclick="updateSetting('questionCount', 5)" id="set-q-5" class="py-1.5 rounded-xl border-2 font-bold text-center text-sm border-slate-200 bg-slate-50 text-slate-700">5もん</button>
+                    <button onclick="updateSetting('questionCount', 10)" id="set-q-10" class="py-1.5 rounded-xl border-2 font-bold text-center text-sm border-slate-200 bg-slate-50 text-slate-700">10もん</button>
+                </div>
+            </div>
+
+            <!-- 3. ぐたいぶつの リアルデザイン -->
+            <div class="flex flex-col gap-1">
+                <label class="font-bold text-slate-700 text-xs">● ぐたいぶつの しゅるい</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="updateSetting('itemType', 'apple')" id="set-item-apple" class="py-1.5 rounded-xl border-2 font-bold text-lg text-center border-amber-400 bg-amber-100">🍎</button>
+                    <button onclick="updateSetting('itemType', 'strawberry')" id="set-item-strawberry" class="py-1.5 rounded-xl border-2 font-bold text-lg text-center border-slate-200 bg-slate-50">🍓</button>
+                    <button onclick="updateSetting('itemType', 'ohajiki')" id="set-item-ohajiki" class="py-1.5 rounded-xl border-2 font-bold text-lg text-center border-slate-200 bg-slate-50">🔴</button>
+                    <button onclick="updateSetting('itemType', 'star')" id="set-item-star" class="py-1.5 rounded-xl border-2 font-bold text-lg text-center border-slate-200 bg-slate-50">⭐</button>
+                </div>
+            </div>
+
+            <!-- 4. おんせい -->
+            <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+                <span class="font-bold text-slate-700 text-xs">● よみあげ おんせい</span>
+                <input type="checkbox" id="voice-toggle" checked onchange="updateSetting('voiceEnabled', this.checked)" class="w-5 h-5 accent-amber-500 rounded cursor-pointer">
+            </div>
+
+            <button onclick="toggleSettingsModal(false)" class="mt-1 bg-amber-500 hover:bg-amber-600 text-white font-black py-2 rounded-xl text-center text-base shadow-md transition-all">
+                とじる
+            </button>
+        </div>
+    </div>
+
+    <!-- 🌸 「すごい！」花丸演出オーバーレイ (全問クリア時には周囲に5つの星が出現) -->
+    <div id="result-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 flex flex-col items-center justify-center hidden pointer-events-none">
+        <div class="relative flex flex-col items-center justify-center">
+            
+            <!-- 全問達成（5回目など）に花丸を取り囲む5つの星 -->
+            <div id="stars-circle" class="absolute inset-0 pointer-events-none hidden">
+                <span class="absolute -top-12 left-1/2 -translate-x-1/2 text-4xl md:text-5xl animate-bounce">⭐</span>
+                <span class="absolute top-1/4 -right-12 text-4xl md:text-5xl animate-bounce" style="animation-delay: 0.1s;">⭐</span>
+                <span class="absolute -bottom-8 right-2 text-4xl md:text-5xl animate-bounce" style="animation-delay: 0.2s;">⭐</span>
+                <span class="absolute -bottom-8 left-2 text-4xl md:text-5xl animate-bounce" style="animation-delay: 0.3s;">⭐</span>
+                <span class="absolute top-1/4 -left-12 text-4xl md:text-5xl animate-bounce" style="animation-delay: 0.4s;">⭐</span>
+            </div>
+
+            <div class="animate-hanamaru flex flex-col items-center justify-center relative z-10">
+                <svg class="w-52 h-52 md:w-64 md:h-64 drop-shadow-2xl" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="85" fill="none" stroke="#F43F5E" stroke-width="12" stroke-linecap="round" stroke-dasharray="10 15" />
+                    <circle cx="100" cy="100" r="68" fill="none" stroke="#F43F5E" stroke-width="10" />
+                    <path d="M 60 100 Q 100 40 140 100 Q 100 160 60 100 Z" fill="none" stroke="#F43F5E" stroke-width="8" />
+                    <text x="100" y="118" font-size="46" font-weight="900" fill="#E11D48" text-anchor="middle" font-family="'M PLUS Rounded 1c'">すごい！</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ====================================================
+           Web Audio API による効果音発音
+           ==================================================== */
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playPop() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(350, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playCountPing(index = 1) {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const baseFreq = 440 + (index * 25);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            playFanfare() {
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.08);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + idx * 0.08 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + idx * 0.08);
+                    osc.stop(this.ctx.currentTime + idx * 0.08 + 0.25);
+                });
+            }
+
+            playTryAgain() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+        }
+
+        const soundFX = new SoundEffects();
+
+        const JapaneseNumbers = {
+            1: "いち", 2: "に", 3: "さん", 4: "よん", 5: "ご",
+            6: "ろく", 7: "なな", 8: "はち", 9: "きゅう", 10: "じゅう",
+            11: "じゅういち", 12: "じゅうに", 13: "じゅうさん", 14: "じゅうよん", 15: "じゅうご",
+            16: "じゅうろく", 17: "じゅうなな", 18: "じゅうはち", 19: "じゅうきゅう", 20: "にじゅう"
+        };
+
+        function speakText(text, onEndCallback = null) {
+            if (!appState.voiceEnabled) {
+                if (onEndCallback) onEndCallback();
+                return;
+            }
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ja-JP';
+                utterance.rate = 0.85;
+                utterance.pitch = 1.1;
+
+                if (onEndCallback) {
+                    utterance.onend = onEndCallback;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                if (onEndCallback) onEndCallback();
+            }
+        }
+
+        const appState = {
+            mode: 'count', // 'count' (数唱), 'place' (計数), 'howmany' (いくつの)
+            maxNumber: 10,
+            questionCount: 5,
+            currentQuestionIndex: 0,
+            targetNumber: 5,
+            itemType: 'apple',
+            voiceEnabled: true,
+            boardState: Array(20).fill(null),
+            countedCells: new Set(),
+            cellTouchCounts: {},
+            speakableQuestionText: ""
+        };
+
+        const ItemIcons = {
+            apple: '<span class="text-2xl md:text-3xl drop-shadow select-none pointer-events-none">🍎</span>',
+            strawberry: '<span class="text-2xl md:text-3xl drop-shadow select-none pointer-events-none">🍓</span>',
+            ohajiki: '<div class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-red-400 to-rose-600 border-2 border-white shadow-sm flex items-center justify-center text-white text-[10px] font-bold select-none pointer-events-none">おはじき</div>',
+            star: '<span class="text-2xl md:text-3xl drop-shadow select-none pointer-events-none">⭐</span>'
+        };
+
+        const ItemNames = {
+            apple: 'りんご',
+            strawberry: 'いちご',
+            ohajiki: 'おはじき',
+            star: 'ほし'
+        };
+
+        window.onload = function() {
+            initBoard();
+            updateSettingsUI();
+        };
+
+        function setMode(newMode) {
+            appState.mode = newMode;
+            appState.currentQuestionIndex = 0;
+
+            ['count', 'place', 'howmany'].forEach(m => {
+                const btn = document.getElementById(`mode-${m}`);
+                if (m === newMode) {
+                    btn.className = "px-2.5 py-1 rounded-lg font-bold text-xs md:text-sm transition-all bg-amber-500 text-white shadow-sm";
+                } else {
+                    btn.className = "px-2.5 py-1 rounded-lg font-bold text-xs md:text-sm transition-all bg-white text-amber-900 hover:bg-amber-100";
+                }
+            });
+
+            const actionBtns = document.getElementById('action-buttons');
+            const numBtns = document.getElementById('number-buttons');
+
+            if (newMode === 'count') {
+                actionBtns.classList.add('hidden');
+                numBtns.classList.add('hidden');
+                numBtns.classList.remove('flex');
+            } else if (newMode === 'howmany') {
+                actionBtns.classList.add('hidden');
+                numBtns.classList.remove('hidden');
+                numBtns.classList.add('flex');
+            } else { // place
+                actionBtns.classList.remove('hidden');
+                numBtns.classList.add('hidden');
+                numBtns.classList.remove('flex');
+            }
+
+            nextQuestion();
+        }
+
+        function initBoard() {
+            appState.boardState = Array(20).fill(null);
+            appState.countedCells.clear();
+            appState.cellTouchCounts = {};
+            renderTrayLabel();
+            renderFrames();
+            renderTray();
+            renderProgress();
+            renderNumberPad();
+        }
+
+        function renderTrayLabel() {
+            const label = document.getElementById('tray-label');
+            label.textContent = `${ItemNames[appState.itemType]} おきば`;
+        }
+
+        function renderFrames() {
+            const wrapper = document.getElementById('frames-wrapper');
+            wrapper.innerHTML = '';
+
+            const numFrames = appState.maxNumber === 20 ? 2 : 1;
+            const cellsPerFrame = appState.maxNumber === 5 ? 5 : 10;
+
+            for (let f = 0; f < numFrames; f++) {
+                const frameDiv = document.createElement('div');
+                frameDiv.className = "bg-white p-2 rounded-xl border-3 border-sky-400 shadow-md w-full max-w-lg flex flex-col justify-center";
+                
+                const gridDiv = document.createElement('div');
+                gridDiv.className = `grid grid-cols-5 gap-1.5 md:gap-2 ${cellsPerFrame === 5 ? 'grid-rows-1' : 'grid-rows-2'}`;
+
+                for (let c = 0; c < cellsPerFrame; c++) {
+                    const globalIdx = f * 10 + c;
+                    const cell = document.createElement('div');
+                    cell.className = "frame-cell aspect-square border-2 border-dashed border-sky-300 rounded-xl flex items-center justify-center bg-sky-50/50 hover:bg-sky-100 transition-colors relative cursor-pointer min-w-[36px] min-h-[36px] max-h-[64px]";
+                    cell.dataset.index = globalIdx;
+
+                    cell.addEventListener('dragover', handleDragOver);
+                    cell.addEventListener('drop', handleDrop);
+                    cell.addEventListener('click', () => handleCellClick(globalIdx));
+
+                    if (appState.boardState[globalIdx]) {
+                        const itemEl = createItemElement(globalIdx);
+                        cell.appendChild(itemEl);
+
+                        // ③いくつのモードでタッチされた場合の数字バッジ表示
+                        if (appState.mode === 'howmany' && appState.cellTouchCounts[globalIdx]) {
+                            const badge = document.createElement('span');
+                            badge.className = "absolute -top-1 -right-1 bg-amber-500 text-white font-black text-xs w-5 h-5 rounded-full flex items-center justify-center border border-white shadow-sm animate-pop z-20";
+                            badge.textContent = appState.cellTouchCounts[globalIdx];
+                            cell.appendChild(badge);
+                        }
+                    } else {
+                        const numGuide = document.createElement('span');
+                        numGuide.className = "text-sky-200 font-bold text-xs pointer-events-none select-none";
+                        numGuide.textContent = globalIdx + 1;
+                        cell.appendChild(numGuide);
+                    }
+
+                    gridDiv.appendChild(cell);
+                }
+
+                frameDiv.appendChild(gridDiv);
+                wrapper.appendChild(frameDiv);
+            }
+        }
+
+        function renderTray() {
+            const tray = document.getElementById('item-tray');
+            tray.innerHTML = '';
+
+            const trayItem = document.createElement('div');
+            trayItem.className = "p-1.5 md:p-2 bg-white rounded-xl border-2 border-orange-300 shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition-transform flex flex-col items-center justify-center gap-0.5 min-w-[64px]";
+            trayItem.draggable = true;
+            trayItem.id = "tray-source-item";
+
+            trayItem.innerHTML = `
+                ${ItemIcons[appState.itemType]}
+                <span class="text-[10px] font-bold text-orange-900">${ItemNames[appState.itemType]}</span>
+            `;
+
+            trayItem.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', 'from-tray');
+            });
+
+            trayItem.addEventListener('click', () => {
+                autoPlaceFromTray();
+            });
+
+            tray.appendChild(trayItem);
+        }
+
+        function renderNumberPad() {
+            const pad = document.getElementById('num-pad');
+            pad.innerHTML = '';
+
+            const max = appState.maxNumber;
+
+            if (max === 20) {
+                // 20までのときは 1〜10 と 11〜20 の2行に綺麗に分割
+                const row1 = document.createElement('div');
+                row1.className = "flex justify-center gap-1 md:gap-1.5 w-full";
+                const row2 = document.createElement('div');
+                row2.className = "flex justify-center gap-1 md:gap-1.5 w-full";
+
+                for (let i = 1; i <= 20; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = "w-7 h-8 md:w-9 md:h-10 bg-white hover:bg-amber-100 active:bg-amber-300 text-slate-800 font-black text-xs md:text-sm rounded-lg border-b-2 border-amber-400 border btn-shadow transition-all flex items-center justify-center shrink-0";
+                    btn.textContent = i;
+                    btn.onclick = () => selectNumberAnswer(i);
+
+                    if (i <= 10) {
+                        row1.appendChild(btn);
+                    } else {
+                        row2.appendChild(btn);
+                    }
+                }
+                pad.appendChild(row1);
+                pad.appendChild(row2);
+            } else {
+                // 5または10の場合
+                const row = document.createElement('div');
+                row.className = "flex flex-wrap justify-center gap-1.5 md:gap-2 w-full";
+
+                for (let i = 1; i <= max; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = "w-9 h-9 md:w-11 md:h-11 bg-white hover:bg-amber-100 active:bg-amber-300 text-slate-800 font-black text-base md:text-lg rounded-xl border-b-2 border-amber-400 border btn-shadow transition-all flex items-center justify-center";
+                    btn.textContent = i;
+                    btn.onclick = () => selectNumberAnswer(i);
+                    row.appendChild(btn);
+                }
+                pad.appendChild(row);
+            }
+        }
+
+        function renderProgress() {
+            const container = document.getElementById('progress-container');
+            container.innerHTML = '';
+
+            const total = appState.questionCount;
+            const current = appState.currentQuestionIndex;
+
+            const starsDiv = document.createElement('div');
+            starsDiv.className = "flex items-center gap-1";
+
+            for (let i = 0; i < total; i++) {
+                const star = document.createElement('span');
+                if (i < current) {
+                    star.textContent = '⭐';
+                    star.className = 'text-xs md:text-sm animate-pop';
+                } else {
+                    star.textContent = '⚪';
+                    star.className = 'text-xs md:text-sm text-slate-300';
+                }
+                starsDiv.appendChild(star);
+            }
+
+            container.appendChild(starsDiv);
+
+            // カウントテキスト（例: 5/5 たまったよ！）
+            const badge = document.createElement('span');
+            badge.className = "text-xs font-black text-amber-900 ml-1";
+            if (current >= total) {
+                badge.textContent = `${total}/${total} たまったよ！`;
+            } else {
+                badge.textContent = `${current}/${total}`;
+            }
+            container.appendChild(badge);
+        }
+
+        function createItemElement(index) {
+            const div = document.createElement('div');
+            div.className = "item-element w-full h-full flex items-center justify-center animate-pop cursor-pointer select-none relative";
+            div.id = `item-cell-${index}`;
+            div.innerHTML = ItemIcons[appState.itemType];
+
+            div.draggable = true;
+            div.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', `from-cell:${index}`);
+            });
+
+            return div;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if (appState.mode === 'count' || appState.mode === 'howmany') return;
+
+            const data = e.dataTransfer.getData('text/plain');
+            const targetCellIndex = parseInt(e.currentTarget.dataset.index);
+
+            if (data === 'from-tray') {
+                placeItemToCell(targetCellIndex);
+            } else if (data.startsWith('from-cell:')) {
+                const fromIndex = parseInt(data.split(':')[1]);
+                moveItem(fromIndex, targetCellIndex);
+            }
+        }
+
+        function handleCellClick(index) {
+            // モード1: すうしょう（タッチで数唱）
+            if (appState.mode === 'count') {
+                if (appState.boardState[index]) {
+                    countCellItem(index);
+                }
+                return;
+            }
+
+            // モード3: いくつの（消さずにタッチでカウント音＋番号バッジ付与）
+            if (appState.mode === 'howmany') {
+                if (appState.boardState[index]) {
+                    if (!appState.cellTouchCounts[index]) {
+                        const currentCount = Object.keys(appState.cellTouchCounts).length + 1;
+                        appState.cellTouchCounts[index] = currentCount;
+                        soundFX.playCountPing(currentCount);
+                        speakText(JapaneseNumbers[currentCount] || currentCount.toString());
+                        renderFrames();
+                    }
+                }
+                return;
+            }
+
+            // モード2: けいすう（置く/取り除く）
+            if (appState.boardState[index]) {
+                removeItemFromCell(index);
+            } else {
+                placeItemToCell(index);
+            }
+        }
+
+        function autoPlaceFromTray() {
+            if (appState.mode === 'count' || appState.mode === 'howmany') return;
+
+            const emptyIndex = appState.boardState.findIndex((v, idx) => v === null && idx < appState.maxNumber);
+            if (emptyIndex !== -1) {
+                placeItemToCell(emptyIndex);
+            }
+        }
+
+        function placeItemToCell(index) {
+            if (index >= appState.maxNumber) return;
+            appState.boardState[index] = true;
+            soundFX.playPop();
+            renderFrames();
+        }
+
+        function removeItemFromCell(index) {
+            appState.boardState[index] = null;
+            renderFrames();
+        }
+
+        function moveItem(fromIdx, toIdx) {
+            if (toIdx >= appState.maxNumber) return;
+            appState.boardState[fromIdx] = null;
+            appState.boardState[toIdx] = true;
+            soundFX.playPop();
+            renderFrames();
+        }
+
+        function resetCurrentBoard() {
+            if (appState.mode === 'howmany') {
+                appState.cellTouchCounts = {};
+                renderFrames();
+                return;
+            }
+            if (appState.mode === 'count') return;
+
+            appState.boardState = Array(20).fill(null);
+            appState.countedCells.clear();
+            renderFrames();
+            soundFX.playTryAgain();
+        }
+
+        function nextQuestion() {
+            appState.boardState = Array(20).fill(null);
+            appState.countedCells.clear();
+            appState.cellTouchCounts = {};
+
+            appState.targetNumber = Math.floor(Math.random() * appState.maxNumber) + 1;
+
+            const qText = document.getElementById('question-text');
+
+            if (appState.mode === 'count') {
+                for (let i = 0; i < appState.targetNumber; i++) {
+                    appState.boardState[i] = true;
+                }
+                qText.textContent = `${ItemNames[appState.itemType]}を 1つずつ タッチして かぞえよう！`;
+                appState.speakableQuestionText = `${ItemNames[appState.itemType]}を 1つずつ タッチして かぞえよう！`;
+            } else if (appState.mode === 'place') {
+                // ②けいすうモード：数字を目立たせるHTMLタグを付与
+                const highlightedNum = `<span class="text-2xl md:text-3xl font-black text-rose-600 bg-amber-200 border-2 border-amber-400 px-2.5 py-0.5 rounded-xl shadow-sm inline-block mx-1 align-middle">${appState.targetNumber}</span>`;
+                qText.innerHTML = `${ItemNames[appState.itemType]}を ${highlightedNum} こ おきましょう。`;
+                appState.speakableQuestionText = `${ItemNames[appState.itemType]}を ${appState.targetNumber}こ おきましょう。`;
+            } else if (appState.mode === 'howmany') {
+                for (let i = 0; i < appState.targetNumber; i++) {
+                    appState.boardState[i] = true;
+                }
+                qText.textContent = `ぜんぶで いくつ あるかな？`;
+                appState.speakableQuestionText = `ぜんぶで いくつ あるかな？`;
+            }
+
+            renderFrames();
+            renderProgress();
+            speakCurrentQuestion();
+        }
+
+        function speakCurrentQuestion() {
+            speakText(appState.speakableQuestionText);
+        }
+
+        function countCellItem(index) {
+            if (appState.countedCells.has(index)) return;
+
+            appState.countedCells.add(index);
+            const countNum = appState.countedCells.size;
+
+            soundFX.playCountPing(countNum);
+            
+            const itemEl = document.getElementById(`item-cell-${index}`);
+            if (itemEl) {
+                itemEl.classList.add('item-highlight');
+            }
+
+            speakText(JapaneseNumbers[countNum] || countNum.toString());
+
+            if (countNum === appState.targetNumber) {
+                setTimeout(() => {
+                    soundFX.playFanfare();
+                    speakText(`ぜんぶで ${countNum}こ！`, () => {
+                        showSuccessFeedback();
+                    });
+                }, 700);
+            }
+        }
+
+        function checkAnswer() {
+            const placedCount = appState.boardState.filter(v => v !== null).length;
+
+            if (placedCount === appState.targetNumber) {
+                highlightItemsSequentially(placedCount, () => {
+                    showSuccessFeedback();
+                });
+            } else {
+                soundFX.playTryAgain();
+                speakText("もういちど やってみよう！");
+            }
+        }
+
+        function selectNumberAnswer(selectedNum) {
+            if (selectedNum === appState.targetNumber) {
+                highlightItemsSequentially(appState.targetNumber, () => {
+                    showSuccessFeedback();
+                });
+            } else {
+                soundFX.playTryAgain();
+                speakText("ちがうよ。もういちど かぞえてみよう！");
+            }
+        }
+
+        function highlightItemsSequentially(total, callback) {
+            let current = 0;
+
+            function step() {
+                if (current < total) {
+                    const itemEl = document.getElementById(`item-cell-${current}`);
+                    if (itemEl) {
+                        itemEl.classList.add('item-highlight');
+                    }
+                    current++;
+                    soundFX.playCountPing(current);
+                    speakText(JapaneseNumbers[current] || current.toString(), () => {
+                        setTimeout(step, 250);
+                    });
+                } else {
+                    setTimeout(() => {
+                        soundFX.playFanfare();
+                        speakText(`ぜんぶで ${total}こ！`, callback);
+                    }, 350);
+                }
+            }
+
+            step();
+        }
+
+        function showSuccessFeedback() {
+            const overlay = document.getElementById('result-overlay');
+            const starsCircle = document.getElementById('stars-circle');
+            
+            const isFinalQuestion = (appState.currentQuestionIndex + 1) >= appState.questionCount;
+
+            // 最終問題（5回目など）の時は周囲の星5つをパッと表示
+            if (isFinalQuestion) {
+                starsCircle.classList.remove('hidden');
+            } else {
+                starsCircle.classList.add('hidden');
+            }
+
+            overlay.classList.remove('hidden');
+
+            speakText("すごい！");
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                starsCircle.classList.add('hidden');
+                advanceQuestion();
+            }, isFinalQuestion ? 2000 : 1400);
+        }
+
+        function advanceQuestion() {
+            appState.currentQuestionIndex++;
+            renderProgress();
+
+            if (appState.currentQuestionIndex >= appState.questionCount) {
+                soundFX.playFanfare();
+                speakText("すごい！ ぜんぶ できたね！", () => {
+                    appState.currentQuestionIndex = 0;
+                    nextQuestion();
+                });
+            } else {
+                nextQuestion();
+            }
+        }
+
+        function toggleSettingsModal(show) {
+            const modal = document.getElementById('settings-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+                initBoard();
+                nextQuestion();
+            }
+        }
+
+        function updateSetting(key, value) {
+            appState[key] = value;
+            updateSettingsUI();
+            if (key === 'maxNumber' || key === 'itemType') {
+                initBoard();
+            }
+        }
+
+        function updateSettingsUI() {
+            [5, 10, 20].forEach(num => {
+                const btn = document.getElementById(`set-max-${num}`);
+                if (appState.maxNumber === num) {
+                    btn.className = "py-1.5 rounded-xl border-2 font-bold text-center text-sm border-amber-400 bg-amber-100 text-amber-900 shadow-sm";
+                } else {
+                    btn.className = "py-1.5 rounded-xl border-2 font-bold text-center text-sm border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100";
+                }
+            });
+
+            [3, 5, 10].forEach(num => {
+                const btn = document.getElementById(`set-q-${num}`);
+                if (appState.questionCount === num) {
+                    btn.className = "py-1.5 rounded-xl border-2 font-bold text-center text-sm border-amber-400 bg-amber-100 text-amber-900 shadow-sm";
+                } else {
+                    btn.className = "py-1.5 rounded-xl border-2 font-bold text-center text-sm border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100";
+                }
+            });
+
+            ['apple', 'strawberry', 'ohajiki', 'star'].forEach(type => {
+                const btn = document.getElementById(`set-item-${type}`);
+                if (appState.itemType === type) {
+                    btn.className = "py-1.5 rounded-xl border-2 font-bold text-lg text-center border-amber-400 bg-amber-100 shadow-sm";
+                } else {
+                    btn.className = "py-1.5 rounded-xl border-2 font-bold text-lg text-center border-slate-200 bg-slate-50 hover:bg-slate-100";
+                }
+            });
+
+            document.getElementById('voice-toggle').checked = appState.voiceEnabled;
+        }
+    </script>
+</body>
+</html>
